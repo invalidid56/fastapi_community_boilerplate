@@ -33,5 +33,6 @@ class Article(Base):
 
     user_id = Column(Integer, ForeignKey("user.id"))
     user = relationship("User", backref="articles")
+
     board_id = Column(Integer, ForeignKey("board.id"))
     board = relationship("Board", backref="articles")

@@ -13,7 +13,7 @@ from endpoint.user.service import pwd_context
 
 from config import CREDENTIAL_ALGORITHM, CREDENTIAL_ALGORITHM
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 1
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 4
 SECRET_KEY = CREDENTIAL_ALGORITHM
 ALGORITHM = CREDENTIAL_ALGORITHM
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/user/login")
