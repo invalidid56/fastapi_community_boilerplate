@@ -1,1 +1,8 @@
-SQLALCHEMY_DATABASE_URL = "sqlite:///./data/db/elice_community.db"
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+SQLALCHEMY_DATABASE_URL = os.getenv("SQLALCHEMY_DATABASE_URL", "")
+CREDENTIAL_SECRET_KEY = os.getenv("CREDENTIAL_SECRET_KEY", "")
+CREDENTIAL_ALGORITHM = os.getenv("CREDENTIAL_ALGORITHM", "")
