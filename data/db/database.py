@@ -2,7 +2,11 @@ from functools import wraps
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from config import SQLALCHEMY_DATABASE_URL
+from config import DB_CONFIG
+
+
+SQLALCHEMY_DATABASE_URL =\
+    f"{DB_CONFIG['rdb']}://{DB_CONFIG['db_user']}:{DB_CONFIG['db_password']}@{DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['db']}"
 
 
 engine = create_engine(
@@ -15,12 +19,14 @@ if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
     engine = create_async_engine(
         SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
     )
-else:
+elif SQLALCHEMY_DATABASE_URL.startswith("postgresql"):
     engine = create_async_engine(SQLALCHEMY_DATABASE_URL)
+else:
+    raise Exception("unknown database")
 
 Base = declarative_base()
 
-async_session = AsyncSession(autocommit=False, autoflush=False, bind=engine, expire_on_commit=False)
+async_session = AsyncSession(bind=engine, expire_on_commit=False)
 
 
 class Transactional:
