@@ -1,7 +1,7 @@
 from functools import wraps
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from config import SQLALCHEMY_DATABASE_URL
 
 
@@ -12,11 +12,11 @@ engine = create_engine(
 )
 
 if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
-    engine = create_engine(
+    engine = create_async_engine(
         SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
     )
 else:
-    engine = create_engine(SQLALCHEMY_DATABASE_URL)
+    engine = create_async_engine(SQLALCHEMY_DATABASE_URL)
 
 Base = declarative_base()
 

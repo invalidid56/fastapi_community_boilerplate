@@ -1,57 +1,58 @@
 from data.db.database import Transactional
 from data.db.models import Article
-from sqlalchemy import select, insert, update, delete
+from sqlalchemy import select, update, delete
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 @Transactional()
-def create_article(article_req: dict, session=None) -> None:
-    _article = Article(**article_req)
+async def create_article(article_req: dict, session: AsyncSession = None) -> None:
+    _article: Article = Article(**article_req)
 
     session.add(_article)
-    session.commit()
-    session.refresh(_article)
+    await session.commit()
+    await session.refresh(_article)
 
 
 @Transactional()
-def get_article(article_id: int, session=None):
+async def get_article(article_id: int, session: AsyncSession = None) -> Article:
     stmt = (
         select(Article)
         .where(Article.id == article_id)
     )
-    res = session.execute(stmt)
+    res = await session.execute(stmt)
 
     return res.scalars().first()
 
 
 @Transactional()
-def get_articles(board_id: int, per_page: int, page: int, session=None):
+async def get_articles(board_id: int, per_page: int, page: int, session: AsyncSession = None) -> list[Article]:
     stmt = (
         select(Article)
         .where(Article.board_id == board_id)
         .limit(per_page).offset((page - 1) * per_page)
     )
 
-    res = session.execute(stmt)
+    res = await session.execute(stmt)
 
     return res.scalars().all()
 
 
 @Transactional()
-def update_article(article_id: int, article_req: dict, session=None) -> None:
+async def update_article(article_id: int, article_req: dict, session: AsyncSession = None) -> None:
     stmt = (
         update(Article)
         .where(Article.id == article_id)
         .values(**article_req)
     )
 
-    session.execute(stmt)
+    await session.execute(stmt)
 
 
 @Transactional()
-def delete_article(article_id: int, session=None) -> None:
+async def delete_article(article_id: int, session: AsyncSession = None) -> None:
     stmt = (
         delete(Article)
         .where(Article.id == article_id)
     )
 
-    session.execute(stmt)
+    await session.execute(stmt)
