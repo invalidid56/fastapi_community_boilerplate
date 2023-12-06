@@ -1,58 +1,58 @@
-from sqlalchemy import insert, select, update, delete
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import select, update, delete
+from sqlalchemy.ext.asyncio import AsyncSession
 from data.db.models import Board
 from data.db.database import Transactional
 
 
 @Transactional()
-def create_board(board_req: dict, session: Session = None) -> None:
-    _board = Board(**board_req)
+async def create_board(board_req: dict, session: AsyncSession = None) -> None:
+    _board: Board = Board(**board_req)
 
     session.add(_board)
-    session.commit()
-    session.refresh(_board)
+    await session.commit()
+    await session.refresh(_board)
 
 
 @Transactional()
-def get_board(board_id: int, session: Session = None):
+async def get_board(board_id: int, session: AsyncSession = None):
     stmt = (
         select(Board)
         .where(Board.id == board_id)
     )
-    res = session.execute(stmt)
+    res = await session.execute(stmt)
 
     return res.scalars().first()
 
 
 @Transactional()
-def get_boards(user_id: int, per_page: int, page: int, session: Session = None):
+async def get_boards(user_id: int, per_page: int, page: int, session: AsyncSession = None):
     stmt = (
         select(Board)
-        .where((Board.user_id == user_id) | (Board.public == True))
+        .where((Board.user_id == user_id) | (Board.public is True))
         .limit(per_page).offset((page - 1) * per_page)
     )
 
-    res = session.execute(stmt)
+    res = await session.execute(stmt)
 
     return res.scalars().all()
 
 
 @Transactional()
-def update_board(board_id: int, board_req: dict, session: Session = None) -> None:
+async def update_board(board_id: int, board_req: dict, session: AsyncSession = None) -> None:
     stmt = (
         update(Board)
         .where(Board.id == board_id)
         .values(**board_req)
     )
 
-    session.execute(stmt)
+    await session.execute(stmt)
 
 
 @Transactional()
-def delete_board(board_id: int, session: Session = None) -> None:
+async def delete_board(board_id: int, session: AsyncSession = None) -> None:
     stmt = (
         delete(Board)
         .where(Board.id == board_id)
     )
 
-    session.execute(stmt)
+    await session.execute(stmt)
