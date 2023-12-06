@@ -1,68 +1,63 @@
 from passlib.context import CryptContext
-from sqlalchemy.orm import Session
-from sqlalchemy import select, insert, delete, update
-from endpoint.user.entity import UserCreate
-from data.db.models import User
+from endpoint.user import repository, entity
+from sqlalchemy.exc import IntegrityError, NoResultFound
+from fastapi import HTTPException
+
 
 # TODO: Exception: 중복 id 생성 방지, 없는 id 조회 방지, 없는 id 삭제 방지, 없는 id 수정 방지
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-def create_user(session: Session, user_create: UserCreate):
-    stmt = (
-        insert(User)
-        .values(
-            username=user_create.username,
-            password=pwd_context.hash(user_create.password1),
-            email=user_create.email
-        )
-    )
+async def get_user(username: str) -> entity.User:
+    res = await repository.get_user(username=username)
+
+    if res is None:
+        raise HTTPException(status_code=404, detail="user not found")
+
+    return res
+
+
+async def create_user(username: str, email: str, password: str) -> None:
     try:
-        res = session.execute(stmt)
-        session.commit()
-    except Exception as e:
-        print(e)
-        session.rollback()
-        raise e
+        await repository.create_user({
+            'username': username,
+            'email': email,
+            'password': pwd_context.hash(password)
+        })
+    except IntegrityError as e:
+        code = e.code
+        msg = e.orig
 
-    return res
-
-
-def get_user(session: Session, username: str):
-    stmt = (
-        select(User)
-        .where(User.username == username)
-    )
-
-    res = session.execute(stmt)
-
-    return res.scalars().first()
+        if code == 1062:
+            raise HTTPException(status_code=403, detail="username must be unique")
+        else:
+            raise HTTPException(status_code=500, detail=f"Unknown Error: {msg}")
 
 
-def update_user(session: Session, username: str, user_create: UserCreate):
-    stmt = (
-        update(User)
-        .where(User.username == username)
-        .values(
-            username=user_create.username,
-            password=pwd_context.hash(user_create.password1),
-            email=user_create.email
-        )
-    )
+async def update_user(username: str, email: str, password: str) -> None:
+    try:
+        await repository.update_user({
+            'username': username,
+            'email': email,
+            'password': pwd_context.hash(password)
+        })
+    except IntegrityError as e:
+        code = e.code
+        msg = e.orig
 
-    res = session.execute(stmt)
-    session.commit()
+        if code == 1062:
+            raise HTTPException(status_code=403, detail="username must be unique")
+        elif code == 1452:
+            raise HTTPException(status_code=404, detail="user_id not found")
+        else:
+            raise HTTPException(status_code=500, detail=f"Unknown Error: {msg}")
 
-    return res
+    except NoResultFound:
+        raise HTTPException(status_code=404, detail="user_id not found")
 
 
-def delete_user(session: Session, username: str):
-    stmt = (
-        delete(User)
-        .where(User.username == username)
-    )
-
-    res = session.execute(stmt)
-    session.commit()
-
-    return res
+async def delete_user(username) -> None:
+    try:
+        await repository.delete_user(username)
+    except NoResultFound:
+        raise HTTPException(status_code=404, detail="user_id not found")
