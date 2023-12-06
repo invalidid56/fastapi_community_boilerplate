@@ -12,6 +12,7 @@ class BoardCreate(BaseModel):
 class BoardGet(BaseModel):
     name: str
     public: bool
+    user_id: int
 
     class Config:
         orm_mode = True
