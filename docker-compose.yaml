@@ -1,0 +1,39 @@
+version: '3'
+services:
+  postgres:
+    image: postgres:14.0
+    restart: always
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: elice
+    volumes:
+      - /opt/homebrew/var/postgresql@14/data:/var/lib/postgresql/data
+    container_name: postgres_docker
+    networks:
+      - default
+
+  web:
+    image: elice_interview:0.1
+    ports:
+      - "8000:8000"
+    environment:
+      DB_HOST: postgres_docker
+      RDB: postgresql+asyncpg
+      DB_PORT: 5432
+      DB_NAME: elice
+      DB_USER: postgres
+      DB_PASSWORD: 1234
+    depends_on:
+        - postgres
+    networks:
+      - default
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  default:
