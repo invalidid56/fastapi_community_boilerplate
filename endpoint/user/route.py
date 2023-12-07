@@ -29,7 +29,8 @@ router: APIRouter = APIRouter(
 async def user_create(_user_create: entity.UserCreate) -> None:
     await service.create_user(username=_user_create.username,
                               email=_user_create.email,
-                              password=_user_create.password)
+                              password1=_user_create.password1,
+                              password2=_user_create.password2)
 
 
 @router.post("/login",
@@ -48,7 +49,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 
     # Make Access Token (JWT) : username, expire time
     data: dict = {
-        "sub": user.username,
+        "sub": str(user.id),    # Subject must be string
         "exp": datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     }
     access_token: str = jwt.encode(
@@ -58,11 +59,11 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     return {
         "access_token": access_token,
         "token_type": "bearer",
-        "username": user.username
+        "userid": str(user.id)
     }
 
 
-def get_current_user(token: str = Depends(oauth2_scheme)) -> User | None:
+def get_current_user(token: str = Depends(oauth2_scheme)) -> int | None:
     # Validate Token, return user if valid
     credentials_exception: HTTPException = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -71,16 +72,12 @@ def get_current_user(token: str = Depends(oauth2_scheme)) -> User | None:
     )
     try:
         payload: dict = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
+        userid: int = int(payload.get("sub"))
 
-        if username is None:
+        if userid is None:
             raise credentials_exception
 
-    except JWTError:
+    except JWTError as e:
         raise credentials_exception
 
-    else:
-        user: User = service.get_user(username=username)
-        if user is None:
-            raise credentials_exception
-        return user
+    return userid

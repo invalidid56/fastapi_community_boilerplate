@@ -5,14 +5,14 @@ from data.db.models import User
 
 
 @Transactional()
-async def get_user(session: AsyncSession, username: str) -> User:
+async def get_user(username: str, session: AsyncSession = None) -> User:
     stmt = select(User).where(User.username == username)
     result = await session.execute(stmt)
     return result.scalars().first()
 
 
 @Transactional()
-async def create_user(session: AsyncSession, user_req: dict) -> None:
+async def create_user(user_req: dict, session: AsyncSession = None) -> None:
     _user = User(**user_req)
 
     session.add(_user)
@@ -22,13 +22,13 @@ async def create_user(session: AsyncSession, user_req: dict) -> None:
 
 
 @Transactional()
-async def update_user(session: AsyncSession, username: str, user_req: dict) -> None:
+async def update_user(username: str, user_req: dict, session: AsyncSession = None) -> None:
     stmt = update(User).where(User.username == username).values(**user_req)
     await session.execute(stmt)
 
 
 @Transactional()
-async def delete_user(session: AsyncSession, username: str) -> None:
+async def delete_user(username: str, session: AsyncSession = None) -> None:
     stmt = delete(User).where(User.username == username)
     await session.execute(stmt)
 

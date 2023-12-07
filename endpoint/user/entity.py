@@ -30,4 +30,4 @@ class UserGet(User):
 class Token(BaseModel):
     access_token: str
     token_type: str
-    username: str
+    userid: int

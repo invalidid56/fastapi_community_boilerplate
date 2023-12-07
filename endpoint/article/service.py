@@ -3,7 +3,7 @@ from fastapi import HTTPException
 from endpoint.article import repository, entity
 from endpoint.board.service import get_board
 from data.db.models import Article
-from config import SQLALCHEMY_DATABASE_URL
+from config import DB_CONFIG
 
 
 async def create_article(board_id: int, title: str, content: str, user_id: int) -> None:
@@ -15,11 +15,16 @@ async def create_article(board_id: int, title: str, content: str, user_id: int) 
             'user_id': user_id
         })
     except IntegrityError as e:
-        code: str | int = e.code
+        if DB_CONFIG['rdb'].startswith('postgres'):
+            code: int = int(e.orig.pgcode)
+        elif DB_CONFIG['rdb'].startswith('mysql'):
+            code: int = e.orig.args[0]
+        else:
+            raise HTTPException(status_code=500, detail="unknown internal server error")
 
-        if code == 1062 if SQLALCHEMY_DATABASE_URL.startswith('mysql') else 'gkpj':
+        if code == 23505 or code == 1062:
             raise HTTPException(status_code=403, detail="title must be unique")
-        elif code == 1452 if SQLALCHEMY_DATABASE_URL.startswith('mysql') else 1064:
+        elif code == 23503 or code == 1452:
             raise HTTPException(status_code=404, detail="board_id not found")
         else:
             raise HTTPException(status_code=500, detail="unknown internal server error")

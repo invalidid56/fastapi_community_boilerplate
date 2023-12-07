@@ -15,11 +15,11 @@ router = APIRouter(
 
 @router.post("/", status_code=status.HTTP_201_CREATED, summary="Create new board")
 async def create_board(board_create: entity.BoardCreate,
-                       user: User = Depends(get_current_user)) -> dict:
+                       user_id: int = Depends(get_current_user)) -> dict:
     await service.create_board(
         name=board_create.name,
         public=board_create.public,
-        user_id=user.id
+        user_id=user_id
     )
 
     return {'message': 'success'}
@@ -27,42 +27,42 @@ async def create_board(board_create: entity.BoardCreate,
 
 @router.get("/{board_id}", response_model=entity.BoardGet, summary="Get board")
 async def get_board(board_id: int,
-                    user: User = Depends(get_current_user)) -> entity.BoardGet:
+                    user_id: int = Depends(get_current_user)) -> entity.BoardGet:
     return await service.get_board(
         board_id=board_id,
-        user_id=user.id
+        user_id=user_id
     )
 
 
 @router.get("/", response_model=list[entity.BoardGet], summary="Get board list")
 async def get_board_list(per_page: int = 10,
                          page: int = 1,
-                         user: User = Depends(get_current_user)) -> list[entity.BoardGet]:
+                         user_id: int = Depends(get_current_user)) -> list[entity.BoardGet]:
     return await service.get_board_list(
         per_page=per_page,
         page=page,
-        user_id=user.id
+        user_id=user_id
     )
 
 
 @router.put("/{board_id}", status_code=status.HTTP_200_OK, summary="Update board")
-def update_board(board_id: int,
-                 board_update: entity.BoardCreate,
-                 user: User = Depends(get_current_user)) -> dict:
-    service.update_board(
+async def update_board(board_id: int,
+                       board_update: entity.BoardCreate,
+                       user_id: int = Depends(get_current_user)) -> dict:
+    await service.update_board(
         board_id=board_update.id,
         name=board_update.name,
         public=board_update.public,
-        user_id=user.id
+        user_id=user_id
     )
 
     return {'message': 'success'}
 
 
 @router.delete("/{board_id}", status_code=status.HTTP_200_OK, summary="Delete board")
-def delete_board(board_id: int,
-                 user: User = Depends(get_current_user)) -> dict:
-    service.delete_board(
+async def delete_board(board_id: int,
+                       user: User = Depends(get_current_user)) -> dict:
+    await service.delete_board(
         board_id=board_id,
         user_id=user.id
     )

@@ -14,12 +14,12 @@ router = APIRouter(
 
 @router.post("/", status_code=status.HTTP_201_CREATED, summary="Create new article")
 async def create_article(article_create: entity.ArticleCreate,
-                         user: User = Depends(get_current_user)) -> dict:
+                         user_id: int = Depends(get_current_user)) -> dict:
     await service.create_article(
         title=article_create.title,
         content=article_create.content,
         board_id=article_create.board_id,
-        user_id=user.id
+        user_id=user_id
     )
 
     return {'message': 'success'}
@@ -27,10 +27,10 @@ async def create_article(article_create: entity.ArticleCreate,
 
 @router.get("/{article_id}", response_model=entity.ArticleGet, summary="Get article")
 async def get_article(article_id: int,
-                      user: User = Depends(get_current_user)) -> entity.ArticleGet:
+                      user_id: int = Depends(get_current_user)) -> entity.ArticleGet:
     return await service.get_article(
         article_id=article_id,
-        user_id=user.id
+        user_id=user_id
     )
 
 
@@ -38,24 +38,24 @@ async def get_article(article_id: int,
 async def get_article_list(board_id: int,
                            per_page: int = 10,
                            page: int = 1,
-                           user: User = Depends(get_current_user)) -> list[entity.ArticleGet]:
+                           user_id: int = Depends(get_current_user)) -> list[entity.ArticleGet]:
     return await service.get_article_list(
         board_id=board_id,
         per_page=per_page,
         page=page,
-        user_id=user.id
+        user_id=user_id
     )
 
 
 @router.put("/{article_id}", status_code=status.HTTP_200_OK, summary="Update article")
 async def update_article(article_id: int,
                          article_update: entity.ArticleUpdate,
-                         user: User = Depends(get_current_user)) -> dict:
+                         user_id: int = Depends(get_current_user)) -> dict:
     await service.update_article(
         article_id=article_id,
         title=article_update.title,
         content=article_update.content,
-        user_id=user.id
+        user_id=user_id
     )
 
     return {'message': 'success'}
@@ -63,10 +63,10 @@ async def update_article(article_id: int,
 
 @router.delete("/{article_id}", status_code=status.HTTP_200_OK, summary="Delete article")
 async def delete_article(article_id: int,
-                         user: User = Depends(get_current_user)) -> dict:
+                         user_id: int = Depends(get_current_user)) -> dict:
     await service.delete_article(
         article_id=article_id,
-        user_id=user.id
+        user_id=user_id
     )
 
     return {'message': 'success'}
