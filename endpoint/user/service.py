@@ -1,12 +1,53 @@
+import random
+from datetime import datetime
 from passlib.context import CryptContext
 from endpoint.user import repository, entity
 from sqlalchemy.exc import IntegrityError, NoResultFound
-from fastapi import HTTPException
-from config import DB_CONFIG
+from fastapi import HTTPException, Depends, Request, status
+from fastapi.security import HTTPBasicCredentials, HTTPBasic
+from config import DB_CONFIG, CREDENTIAL_ALGORITHM, CREDENTIAL_SECRET_KEY
 
 
-# TODO: Exception: 중복 id 생성 방지, 없는 id 조회 방지, 없는 id 삭제 방지, 없는 id 수정 방지
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+login_session: dict = {}
+
+security: HTTPBasic = HTTPBasic()   # {"username": "admin", "password": "admin"}
+
+
+async def create_session(user_id: int) -> str:
+    # add session to login_session
+    session_id: str = f"{user_id}{datetime.now().timestamp()}{random.randint(0, 1000)}"
+    login_session[session_id] = user_id
+    return session_id
+
+
+async def authenticate_user(credentials: HTTPBasicCredentials = Depends(security)) -> int:
+    # Validate User, return id if valid
+    user = await repository.get_user(credentials.username)
+
+    if user is None or not pwd_context.verify(credentials.password, user.password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+
+    return user.id
+
+
+async def get_current_user(request: Request) -> int | None:
+    # Validate Token, return user id if valid
+    session: str = request.cookies.get('session_id')
+
+    if session not in login_session or session is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid session ID",
+        )
+
+    return login_session[session]   # user_id
 
 
 async def get_user(username: str) -> entity.User:
@@ -38,7 +79,7 @@ async def create_user(username: str, email: str, password1: str, password2: str)
         if code == 23505 or code == 1062:
             raise HTTPException(status_code=403, detail="username or email must be unique")
         else:
-            raise HTTPException(status_code=500, detail="unknown internal server error")
+            raise HTTPException(status_code=500, detail=f"unknown internal server error {e.orig}")
 
 
 async def update_user(username: str, email: str, password: str) -> None:

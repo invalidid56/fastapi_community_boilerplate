@@ -5,7 +5,7 @@ from starlette import status
 
 from data.db.models import User
 from endpoint.board import entity, service
-from endpoint.user.route import get_current_user
+from endpoint.user.service import get_current_user
 
 router = APIRouter(
     prefix="/board",

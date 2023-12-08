@@ -1,21 +1,11 @@
 from datetime import timedelta, datetime
 
 from fastapi import APIRouter, HTTPException
-from fastapi import Depends
-from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
-from jose import jwt, JWTError
+from fastapi import Depends, Response
 from starlette import status
 
 from endpoint.user import entity, service
-from endpoint.user.service import pwd_context
-from data.db.models import User
-
-from config import CREDENTIAL_ALGORITHM
-
-ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 4
-SECRET_KEY: str = CREDENTIAL_ALGORITHM
-ALGORITHM: str = CREDENTIAL_ALGORITHM
-oauth2_scheme: OAuth2PasswordBearer = OAuth2PasswordBearer(tokenUrl="/user/login")
+from endpoint.user.service import create_session, authenticate_user
 
 
 router: APIRouter = APIRouter(
@@ -34,50 +24,13 @@ async def user_create(_user_create: entity.UserCreate) -> None:
 
 
 @router.post("/login",
-             response_model=entity.Token,
-             summary="Login user, return access token")
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()) -> dict:
-    # from_data = OAuth2PasswordRequestForm(username=username, password=password)
-    user: User = await service.get_user(form_data.username)
+             summary="Login user, return session id")
+async def login_for_access_token(response: Response, user_id: int = Depends(authenticate_user)) -> dict:
+    session_id = await create_session(user_id=user_id)
 
-    if not user or not pwd_context.verify(form_data.password, user.password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail='Incorrect Username or PW',
-            headers={"WWW-Authenticate": "Bearer"}
-        )
-
-    # Make Access Token (JWT) : username, expire time
-    data: dict = {
-        "sub": str(user.id),    # Subject must be string
-        "exp": datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    }
-    access_token: str = jwt.encode(
-        data, SECRET_KEY, algorithm=ALGORITHM
-    )
+    response.set_cookie(key='session_id', value=session_id)
 
     return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "userid": str(user.id)
+        'message': 'login success',
+        'session_id': session_id
     }
-
-
-def get_current_user(token: str = Depends(oauth2_scheme)) -> int | None:
-    # Validate Token, return user if valid
-    credentials_exception: HTTPException = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"}
-    )
-    try:
-        payload: dict = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        userid: int = int(payload.get("sub"))
-
-        if userid is None:
-            raise credentials_exception
-
-    except JWTError as e:
-        raise credentials_exception
-
-    return userid

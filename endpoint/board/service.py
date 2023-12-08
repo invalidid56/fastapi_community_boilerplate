@@ -13,18 +13,18 @@ async def create_board(name: str, public: bool, user_id: int) -> None:
         })
     except IntegrityError as e:
         if DB_CONFIG['rdb'].startswith('postgres'):
-            code: int = e.orig.pgcode
+            code: int = int(e.orig.pgcode)
         elif DB_CONFIG['rdb'].startswith('mysql'):
-            code: int = e.orig.args[0]
+            code: int = int(e.orig.args[0])
         else:
             raise HTTPException(status_code=500, detail="unknown internal server error")
-
         if code == 23505 or code == 1062:
             raise HTTPException(status_code=403, detail="title must be unique")
         elif code == 23503 or code == 1452:
             raise HTTPException(status_code=404, detail="user id not found")
         else:
-            raise HTTPException(status_code=500, detail="unknown internal server error")
+
+            raise HTTPException(status_code=500, detail=f"{e.orig.pgcode}: {e.orig}")
 
 
 async def get_board(board_id: int, user_id: int) -> entity.BoardGet:
