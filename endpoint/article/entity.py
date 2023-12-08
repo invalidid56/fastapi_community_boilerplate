@@ -15,6 +15,7 @@ class ArticleGet(BaseModel):
     content: str
     board_id: int
     user_id: int
+    id: int
 
     class Config:
         orm_mode = True

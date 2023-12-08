@@ -13,6 +13,7 @@ class BoardGet(BaseModel):
     name: str
     public: bool
     user_id: int
+    id: int
 
     class Config:
         orm_mode = True
