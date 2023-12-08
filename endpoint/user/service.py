@@ -70,11 +70,11 @@ async def create_user(username: str, email: str, password1: str, password2: str)
         })
     except IntegrityError as e:
         if DB_CONFIG['rdb'].startswith('postgres'):
-            code: int = e.orig.pgcode
+            code: int = int(e.orig.pgcode)
         elif DB_CONFIG['rdb'].startswith('mysql'):
-            code: int = e.orig.args[0]
+            code: int = int(e.orig.args[0])
         else:
-            raise HTTPException(status_code=500, detail="unknown internal server error")
+            raise HTTPException(status_code=500, detail="unknown databse")
 
         if code == 23505 or code == 1062:
             raise HTTPException(status_code=403, detail="username or email must be unique")
@@ -90,18 +90,19 @@ async def update_user(username: str, email: str, password: str) -> None:
             'password': pwd_context.hash(password)
         })
     except IntegrityError as e:
-        code = e.code
-        msg = e.orig
+        if DB_CONFIG['rdb'].startswith('postgres'):
+            code: int = int(e.orig.pgcode)
+        elif DB_CONFIG['rdb'].startswith('mysql'):
+            code: int = int(e.orig.args[0])
+        else:
+            raise HTTPException(status_code=500, detail="unknown databse")
 
-        if code == 1062:
+        if code == 23505 or code == 1062:
             raise HTTPException(status_code=403, detail="username must be unique")
-        elif code == 1452:
+        elif code == 23503 or code == 1452:
             raise HTTPException(status_code=404, detail="user_id not found")
         else:
-            raise HTTPException(status_code=500, detail=f"Unknown Error: {msg}")
-
-    except NoResultFound:
-        raise HTTPException(status_code=404, detail="user_id not found")
+            raise HTTPException(status_code=500, detail=f"Unknown Error: {e.orig}")
 
 
 async def delete_user(username) -> None:
