@@ -38,10 +38,11 @@ async def get_board(board_id: int, user_id: int) -> entity.BoardGet:
     return board
 
 
-async def get_board_list(per_page: int, page: int, user_id: int) -> list[entity.BoardGet]:
+async def get_board_list(per_page: int, page: int, user_id: int, order_by_artile: bool) -> list[entity.BoardGet]:
     boards = await repository.get_boards(user_id=user_id,
                                          per_page=per_page,
-                                         page=page)
+                                         page=page,
+                                         order_by_article=order_by_artile)
 
     if boards is None:
         raise HTTPException(status_code=404, detail="board not found")

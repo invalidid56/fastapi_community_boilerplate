@@ -37,11 +37,13 @@ async def get_board(board_id: int,
 @router.get("/", response_model=list[entity.BoardGet], summary="Get board list")
 async def get_board_list(per_page: int = 10,
                          page: int = 1,
+                         order_by_artile: bool = True,
                          user_id: int = Depends(get_current_user)) -> list[entity.BoardGet]:
     return await service.get_board_list(
         per_page=per_page,
         page=page,
-        user_id=user_id
+        user_id=user_id,
+        order_by_artile=order_by_artile
     )
 
 
