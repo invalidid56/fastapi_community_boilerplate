@@ -18,7 +18,7 @@ async def create_article(board_id: int, title: str, content: str, user_id: int) 
         if DB_CONFIG['rdb'].startswith('postgres'):
             code: int = int(e.orig.pgcode)
         elif DB_CONFIG['rdb'].startswith('mysql'):
-            code: int = e.orig.args[0]
+            code: int = int(e.orig.args[0])
         else:
             raise HTTPException(status_code=500, detail="unknown internal server error")
 
