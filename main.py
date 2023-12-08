@@ -17,6 +17,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 app.include_router(user_router.router)
 app.include_router(board_router.router)
 app.include_router(article_router.router)
