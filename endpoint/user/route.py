@@ -5,7 +5,7 @@ from fastapi import Depends, Response
 from starlette import status
 
 from endpoint.user import entity, service
-from endpoint.user.service import create_session, authenticate_user
+from endpoint.user.service import create_session, authenticate_user, get_current_user
 
 
 router: APIRouter = APIRouter(
@@ -33,4 +33,17 @@ async def login_for_access_token(response: Response, user_id: int = Depends(auth
     return {
         'message': 'login success',
         'session_id': session_id
+    }
+
+
+@router.post("/logout",
+             summary="logout user session")
+async def login_for_access_token(response: Response, user_id: int = Depends(get_current_user)) -> dict:
+    if not user_id:
+        raise HTTPException(status_code=401, detail="No session to logout")
+
+    response.delete_cookie(key='session_id')
+
+    return {
+        'message': 'logout success',
     }

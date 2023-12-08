@@ -12,6 +12,7 @@ class RedisDriver:
         return await self._redis_client.get(key)
 
     async def set(self, key, value, ttl=60*15):
+
         await self._redis_client.set(key, value)
         if ttl:
             await self._redis_client.expire(key, ttl)

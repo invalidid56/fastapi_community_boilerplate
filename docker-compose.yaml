@@ -15,10 +15,22 @@ services:
     networks:
       - default
 
+  redis:
+    image: redis:6.2.5
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - default
+    extra_hosts:
+        - "host.docker.internal:host-gateway"
+
   web:
     image: elice_interview:0.1
+    restart:
+        always
     ports:
-      - "8000"
+      - "8000:8000"
     environment:
       DB_HOST: postgres_docker
       RDB: postgresql+asyncpg
@@ -26,10 +38,13 @@ services:
       DB_NAME: elice
       DB_USER: postgres
       DB_PASSWORD: 1234
+      REDIS_HOST: host.docker.internal
     depends_on:
         - postgres
     networks:
       - default
+    external_links:
+      - redis
 
 volumes:
   postgres_data:
