@@ -5,21 +5,22 @@ from endpoint.user import repository, entity
 from sqlalchemy.exc import IntegrityError, NoResultFound
 from fastapi import HTTPException, Depends, Request, status
 from fastapi.security import HTTPBasicCredentials, HTTPBasic
-from config import DB_CONFIG, CREDENTIAL_ALGORITHM, CREDENTIAL_SECRET_KEY
+from config import DB_CONFIG
+from data.redis.connection import RedisDriver
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-
-login_session: dict = {}
-
+redis_connection: RedisDriver = RedisDriver()
 security: HTTPBasic = HTTPBasic()   # {"username": "admin", "password": "admin"}
 
 
 async def create_session(user_id: int) -> str:
     # add session to login_session
     session_id: str = f"{user_id}{datetime.now().timestamp()}{random.randint(0, 1000)}"
-    login_session[session_id] = user_id
+
+    await redis_connection.set(session_id, user_id, ttl=60*30)
+    # login_session[session_id] = user_id
+
     return session_id
 
 
@@ -39,15 +40,23 @@ async def authenticate_user(credentials: HTTPBasicCredentials = Depends(security
 
 async def get_current_user(request: Request) -> int | None:
     # Validate Token, return user id if valid
-    session: str = request.cookies.get('session_id')
+    session_id: str = request.cookies.get('session_id')
 
-    if session not in login_session or session is None:
+    try:
+        user_id: int = await redis_connection.get(session_id)
+    except Exception as e:
+        raise HTTPException(
+            status_code=401,
+            detail=f"Invalid session ID {e}",
+        )
+
+    if user_id is None:
         raise HTTPException(
             status_code=401,
             detail="Invalid session ID",
         )
 
-    return login_session[session]   # user_id
+    return user_id   # user_id
 
 
 async def get_user(username: str) -> entity.User:

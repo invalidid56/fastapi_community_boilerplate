@@ -14,3 +14,11 @@ DB_CONFIG = {
     "port": os.getenv("DB_PORT", "5433"),
     "db": os.getenv("DB", ""),
 }
+
+
+REDIS_CONFIG = {
+    "host": os.getenv("REDIS_HOST", "localhost"),
+    "port": os.getenv("REDIS_PORT", "6379"),
+    "db": os.getenv("REDIS_DB", "0"),
+    "password": os.getenv("REDIS_PASSWORD", ""),
+}
