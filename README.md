@@ -1,5 +1,4 @@
-# Elice Community API Server
-Elice **Backend Interview 용으로 개발된** 커뮤니티 API 서버입니다
+# FastAPI Community Boilerplate
 
 
 ## Requirements
